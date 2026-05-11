@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS — Sales Command Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080c14;
+    --surface: #0d1520;
+    --border: #1a2a3a;
+    --accent: #00f5c4;
+    --accent2: #ff4d6d;
+    --accent3: #ffba08;
+    --text: #e8f4f8;
+    --muted: #4a6878;
+    --glow: 0 0 20px rgba(0,245,196,0.3);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  /* USER OVERRIDE */
+  body {
+    background: var(--bg);
+    font-family: 'Syne', sans-serif;
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    zoom: 0.9;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(0,245,196,0.03) 40px),
+      repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(0,245,196,0.03) 40px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* USER OVERRIDE */
+  .container {
+    position: relative;
+    z-index: 1;
+    padding: 14px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  /* USER OVERRIDE */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0 18px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+
+  .logo {
+    font-family: 'Space Mono', monospace;
+    font-size: 20px; font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 4px;
+    text-shadow: var(--glow);
+  }
+  .logo span { color: var(--text); }
+
+  .header-right { display: flex; gap: 16px; align-items: center; }
+
+  .live-badge {
+    display: flex; align-items: center; gap: 7px;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px; letter-spacing: 2px;
+    color: var(--accent);
+    padding: 5px 12px;
+    border: 1px solid rgba(0,245,196,0.3);
+    border-radius: 2px;
+  }
+
+  .pulse {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity:1; transform:scale(1); }
+    50%      { opacity:0.4; transform:scale(0.8); }
+  }
+
+  .time-display {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px; color: var(--muted); letter-spacing: 1px;
+  }
+
+  /* USER OVERRIDE */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  /* USER OVERRIDE */
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 14px;
+    position: relative;
+    overflow: hidden;
+    cursor: default;
+    transition: border-color 0.3s, transform 0.2s;
+  }
+
+  .kpi-card::before {
+    content: '';
+    position: absolute; top:0; left:0; right:0; height: 2px;
+  }
+  .kpi-card:nth-child(1)::before { background:var(--accent);  box-shadow:0 0 8px var(--accent); }
+  .kpi-card:nth-child(2)::before { background:var(--accent3); box-shadow:0 0 8px var(--accent3); }
+  .kpi-card:nth-child(3)::before { background:var(--accent2); box-shadow:0 0 8px var(--accent2); }
+  .kpi-card:nth-child(4)::before { background:#a78bfa;        box-shadow:0 0 8px #a78bfa; }
+
+  .kpi-card:hover { border-color: rgba(0,245,196,0.3); transform: translateY(-2px); }
+
+  .kpi-label {
+    font-size: 10px; letter-spacing: 2px;
+    color: var(--muted); text-transform: uppercase;
+    margin-bottom: 8px;
+    font-family: 'Space Mono', monospace;
+  }
+
+  /* USER OVERRIDE */
+  .kpi-value {
+    font-size: 24px; font-weight: 800;
+    line-height: 1; margin-bottom: 6px;
+  }
+
+  .kpi-card:nth-child(1) .kpi-value { color: var(--accent); }
+  .kpi-card:nth-child(2) .kpi-value { color: var(--accent3); }
+  .kpi-card:nth-child(3) .kpi-value { color: var(--accent2); }
+  .kpi-card:nth-child(4) .kpi-value { color: #a78bfa; }
+
+  .kpi-change {
+    font-size: 11px; font-weight: 600;
+    font-family: 'Space Mono', monospace;
+  }
+  .kpi-change.up   { color: var(--accent); }
+  .kpi-change.down { color: var(--accent2); }
+
+  .kpi-mini-canvas { position: absolute; bottom: 0; right: 0; opacity: 0.35; }
+
+  /* USER OVERRIDE */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  /* USER OVERRIDE */
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 14px;
+    position: relative;
+  }
+
+  .chart-title {
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    margin-bottom: 12px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .chart-title span { color: var(--accent); font-size: 10px; }
+
+  /* USER OVERRIDE */
+  .bottom-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.2fr;
+    gap: 10px;
+  }
+
+  /* USER OVERRIDE */
+  .table-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 14px;
+  }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px; letter-spacing: 2px;
+    color: var(--muted); text-transform: uppercase;
+    padding: 0 0 8px; text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+
+  tbody tr {
+    border-bottom: 1px solid rgba(26,42,58,0.5);
+    transition: background 0.2s;
+  }
+  tbody tr:hover { background: rgba(0,245,196,0.04); }
+
+  /* USER OVERRIDE */
+  tbody td {
+    padding: 6px 0;
+    font-size: 12px;
+  }
+
+  .rank {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px; color: var(--muted); width: 22px;
+  }
+
+  .product-dot {
+    display: inline-block; width: 5px; height: 5px;
+    border-radius: 50%; margin-right: 6px;
+  }
+
+  .bar-cell { display: flex; align-items: center; gap: 6px; }
+  .bar-bg   { flex: 1; height: 3px; background: var(--border); border-radius: 2px; }
+  .bar-fill { height: 100%; border-radius: 2px; transition: width 1s ease; }
+
+  /* Ticker */
+  .ticker-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 7px 0;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+  .ticker {
+    display: flex; gap: 50px;
+    animation: ticker 30s linear infinite;
+    white-space: nowrap;
+  }
+  @keyframes ticker {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+  .ticker-item {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px; letter-spacing: 1px; color: var(--muted);
+  }
+  .ticker-item .up-val { color: var(--accent); font-weight: 700; }
+  .ticker-item .dn-val { color: var(--accent2); font-weight: 700; }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .kpi-card { animation: fadeInUp 0.5s ease both; }
+  .kpi-card:nth-child(1) { animation-delay: 0.07s; }
+  .kpi-card:nth-child(2) { animation-delay: 0.14s; }
+  .kpi-card:nth-child(3) { animation-delay: 0.21s; }
+  .kpi-card:nth-child(4) { animation-delay: 0.28s; }
+  .chart-card, .table-card { animation: fadeInUp 0.5s ease 0.35s both; }
+
+  .donut-legend { display: flex; flex-direction: column; gap: 7px; margin-top: 10px; }
+  .legend-item  { display: flex; align-items: center; justify-content: space-between; font-size: 11px; }
+  .legend-dot   { width: 7px; height: 7px; border-radius: 2px; margin-right: 7px; flex-shrink: 0; }
+  .legend-label { display: flex; align-items: center; color: var(--muted); }
+  .legend-val   { font-family: 'Space Mono', monospace; font-size: 10px; font-weight: 700; }
+
+  #tooltip {
+    position: fixed;
+    background: rgba(13,21,32,0.96);
+    border: 1px solid var(--accent);
+    padding: 5px 10px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px; color: var(--accent);
+    pointer-events: none; display: none; z-index: 9999;
+    letter-spacing: 1px;
+  }
+</style>
+</head>
+<body>
+
+<div id="tooltip"></div>
+
+<div class="container">
+
+  <header>
+    <div class="logo">NEX<span>US</span></div>
+    <div class="header-right">
+      <div class="live-badge"><div class="pulse"></div> LIVE DATA</div>
+      <div class="time-display" id="clock">--:--:--</div>
+    </div>
+  </header>
+
+  <div class="ticker-wrap"><div class="ticker" id="ticker"></div></div>
+
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-label">Total Revenue</div>
+      <div class="kpi-value" id="kpi-revenue">$0</div>
+      <div class="kpi-change up" id="kpi-rev-change">+0.0% vs last month</div>
+      <canvas class="kpi-mini-canvas" id="sparkline-0" width="90" height="44"></canvas>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Orders Today</div>
+      <div class="kpi-value" id="kpi-orders">0</div>
+      <div class="kpi-change up" id="kpi-ord-change">+0 vs yesterday</div>
+      <canvas class="kpi-mini-canvas" id="sparkline-1" width="90" height="44"></canvas>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Avg Order Value</div>
+      <div class="kpi-value" id="kpi-aov">$0</div>
+      <div class="kpi-change down" id="kpi-aov-change">0.0% vs last week</div>
+      <canvas class="kpi-mini-canvas" id="sparkline-2" width="90" height="44"></canvas>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Conversion Rate</div>
+      <div class="kpi-value" id="kpi-conv">0%</div>
+      <div class="kpi-change up" id="kpi-conv-change">+0.0pp this week</div>
+      <canvas class="kpi-mini-canvas" id="sparkline-3" width="90" height="44"></canvas>
+    </div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">Revenue Over Time <span>12-MONTH VIEW</span></div>
+      <!-- USER OVERRIDE: height 150px -->
+      <canvas id="revenueChart" style="display:block;width:100%;height:150px;"></canvas>
+    </div>
+    <div class="chart-card" style="display:flex;flex-direction:column;">
+      <div class="chart-title">Sales by Category <span>THIS QUARTER</span></div>
+      <canvas id="donutChart" width="180" height="180" style="display:block;margin:0 auto;flex-shrink:0;"></canvas>
+      <div class="donut-legend" id="donutLegend"></div>
+    </div>
+  </div>
+
+  <div class="bottom-row">
+    <div class="chart-card">
+      <div class="chart-title">Weekly Performance <span>UNITS SOLD</span></div>
+      <!-- USER OVERRIDE: height 130px -->
+      <canvas id="barChart" style="display:block;width:100%;height:130px;"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Regional Split <span>HEAT INDEX</span></div>
+      <!-- USER OVERRIDE: height 130px -->
+      <canvas id="regionChart" style="display:block;width:100%;height:130px;"></canvas>
+    </div>
+    <div class="table-card">
+      <div class="chart-title" style="margin-bottom:10px;">Top Products <span>BY REVENUE</span></div>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Product</th><th>Rev.</th><th style="width:80px;">Share</th>
+          </tr>
+        </thead>
+        <tbody id="productTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────
+const COLORS    = ['#00f5c4','#ffba08','#ff4d6d','#a78bfa','#38bdf8','#fb923c'];
+const CATEGORIES= ['Electronics','Apparel','Home & Garden','Sports','Beauty','Books'];
+const PRODUCTS  = ['UltraBook Pro X','SmartWatch Series 7','ANC Headphones',
+                   'Running Shoes Elite','Silk Bomber Jacket','Air Purifier Max',
+                   'Espresso Machine','Yoga Mat Premium'];
+const REGIONS   = ['North America','Europe','Asia Pacific','Latin America','Middle East'];
+const MONTHS    = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const WEEKDAYS  = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+const rand  = (a,b) => Math.random()*(b-a)+a;
+const ri    = (a,b) => Math.floor(rand(a,b));
+
+const revenueData = MONTHS.map(()=>ri(155000,385000));
+const catData     = CATEGORIES.map(c=>({name:c,value:ri(65000,345000)}));
+const catTotal    = catData.reduce((s,d)=>s+d.value,0);
+const weekData    = WEEKDAYS.map(()=>ri(170,690));
+const weekTarget  = WEEKDAYS.map(()=>ri(250,590));
+const regionData  = REGIONS.map(r=>({name:r,value:rand(0.08,1.0)}));
+const regionTotal = regionData.reduce((s,d)=>s+d.value,0);
+const productData = PRODUCTS.map((p,i)=>({name:p,revenue:ri(65000,375000),color:COLORS[i%COLORS.length]}))
+                             .sort((a,b)=>b.revenue-a.revenue);
+const maxPRev = productData[0].revenue;
+const sparkData = Array.from({length:4},()=>Array.from({length:20},()=>ri(28,100)));
+
+const kpi = { revenue:ri(2200000,3400000), orders:ri(820,1200), aov:ri(175,265), conv:+rand(3.1,6.9).toFixed(1) };
+
+// ── CLOCK ────────────────────────────────────────────────────────
+const clockEl=document.getElementById('clock');
+setInterval(()=>clockEl.textContent=new Date().toTimeString().slice(0,8),1000);
+clockEl.textContent=new Date().toTimeString().slice(0,8);
+
+// ── TICKER ───────────────────────────────────────────────────────
+(()=>{
+  const items=[...CATEGORIES,...CATEGORIES].map(c=>{
+    const v=ri(9000,99000),up=Math.random()>0.38,d=rand(0.3,9.5).toFixed(1);
+    return `<span class="ticker-item">${c} &nbsp;<span class="${up?'up-val':'dn-val'}">$${v.toLocaleString()} ${up?'▲':'▼'}${d}%</span></span>`;
+  });
+  document.getElementById('ticker').innerHTML=items.join('')+items.join('');
+})();
+
+// ── ANIMATED COUNTER ─────────────────────────────────────────────
+function animNum(el,from,to,dur,fmt){
+  const t0=performance.now();
+  (function f(now){
+    const t=Math.min((now-t0)/dur,1),e=1-Math.pow(1-t,3);
+    el.textContent=fmt(Math.floor(from+(to-from)*e));
+    if(t<1)requestAnimationFrame(f);
+  })(t0);
+}
+
+animNum(document.getElementById('kpi-revenue'),0,kpi.revenue,1400,v=>'$'+v.toLocaleString());
+animNum(document.getElementById('kpi-orders'), 0,kpi.orders, 1100,v=>v.toLocaleString());
+animNum(document.getElementById('kpi-aov'),    0,kpi.aov,    1200,v=>'$'+v);
+document.getElementById('kpi-conv').textContent=kpi.conv+'%';
+document.getElementById('kpi-rev-change').textContent=`+${rand(8,22).toFixed(1)}% vs last month`;
+document.getElementById('kpi-ord-change').textContent=`+${ri(40,130)} vs yesterday`;
+const aovChg=rand(-4,6);
+const aovEl=document.getElementById('kpi-aov-change');
+aovEl.textContent=`${aovChg>0?'+':''}${aovChg.toFixed(1)}% vs last week`;
+aovEl.className='kpi-change '+(aovChg>=0?'up':'down');
+document.getElementById('kpi-conv-change').textContent=`+${rand(0.2,1.5).toFixed(1)}pp this week`;
+
+// ── SPARKLINES ───────────────────────────────────────────────────
+sparkData.forEach((data,i)=>{
+  const cv=document.getElementById('sparkline-'+i);
+  const ctx=cv.getContext('2d');
+  const W=cv.width,H=cv.height,mn=Math.min(...data),mx=Math.max(...data),rng=mx-mn||1;
+  const pts=data.map((v,j)=>[j*(W/(data.length-1)),H-((v-mn)/rng)*(H-5)-2]);
+  ctx.strokeStyle=['#00f5c4','#ffba08','#ff4d6d','#a78bfa'][i];
+  ctx.lineWidth=1.5;
+  ctx.beginPath();
+  pts.forEach(([x,y],j)=>j===0?ctx.moveTo(x,y):ctx.lineTo(x,y));
+  ctx.stroke();
+});
+
+// ── HELPER: size canvas to CSS layout box ───────────────────────
+function sizeCanvas(cv){
+  cv.width  = cv.offsetWidth  || cv.parentElement.clientWidth-28;
+  cv.height = cv.offsetHeight || parseInt(cv.style.height)||150;
+}
+
+// ── REVENUE CHART  (h=150 per user override) ────────────────────
+(()=>{
+  const cv=document.getElementById('revenueChart');
+  sizeCanvas(cv);
+  const ctx=cv.getContext('2d');
+  const W=cv.width,H=cv.height;
+  const pad={top:12,right:12,bottom:26,left:46};
+  const cW=W-pad.left-pad.right,cH=H-pad.top-pad.bottom;
+  const maxV=Math.max(...revenueData)*1.12;
+  const step=cW/(revenueData.length-1);
+  const tx=i=>pad.left+i*step;
+  const ty=v=>pad.top+cH*(1-v/maxV);
+
+  // Grid
+  ctx.lineWidth=0.5;
+  for(let g=0;g<=3;g++){
+    const y=pad.top+(cH/3)*g;
+    ctx.strokeStyle='rgba(26,42,58,0.85)';
+    ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(pad.left+cW,y);ctx.stroke();
+    ctx.fillStyle='rgba(74,104,120,0.85)';
+    ctx.font='8px Space Mono,monospace';ctx.textAlign='right';
+    ctx.fillText('$'+(Math.floor(maxV*(1-g/3))/1000).toFixed(0)+'k',pad.left-4,y+3);
+  }
+
+  // Area
+  const gr=ctx.createLinearGradient(0,pad.top,0,pad.top+cH);
+  gr.addColorStop(0,'rgba(0,245,196,0.20)');
+  gr.addColorStop(1,'rgba(0,245,196,0.01)');
+  ctx.fillStyle=gr;
+  ctx.beginPath();
+  revenueData.forEach((v,i)=>{
+    if(!i){ctx.moveTo(tx(i),ty(v));return;}
+    const cpx=(tx(i-1)+tx(i))/2;
+    ctx.bezierCurveTo(cpx,ty(revenueData[i-1]),cpx,ty(v),tx(i),ty(v));
+  });
+  ctx.lineTo(tx(revenueData.length-1),pad.top+cH);
+  ctx.lineTo(tx(0),pad.top+cH);
+  ctx.closePath();ctx.fill();
+
+  // Line
+  ctx.strokeStyle='#00f5c4';ctx.lineWidth=2;
+  ctx.shadowColor='#00f5c4';ctx.shadowBlur=7;
+  ctx.beginPath();
+  revenueData.forEach((v,i)=>{
+    if(!i){ctx.moveTo(tx(i),ty(v));return;}
+    const cpx=(tx(i-1)+tx(i))/2;
+    ctx.bezierCurveTo(cpx,ty(revenueData[i-1]),cpx,ty(v),tx(i),ty(v));
+  });
+  ctx.stroke();ctx.shadowBlur=0;
+
+  // Dots
+  revenueData.forEach((v,i)=>{
+    ctx.beginPath();ctx.arc(tx(i),ty(v),2.8,0,Math.PI*2);
+    ctx.fillStyle='#00f5c4';ctx.fill();
+    ctx.strokeStyle='#080c14';ctx.lineWidth=1.5;ctx.stroke();
+  });
+
+  // Month labels
+  ctx.fillStyle='rgba(74,104,120,0.85)';
+  ctx.font='8px Space Mono,monospace';ctx.textAlign='center';
+  MONTHS.forEach((m,i)=>ctx.fillText(m,tx(i),H-6));
+
+  // Tooltip
+  const tip=document.getElementById('tooltip');
+  cv.addEventListener('mousemove',e=>{
+    const r=cv.getBoundingClientRect(),mx=e.clientX-r.left;
+    const idx=Math.round((mx-pad.left)/step);
+    if(idx>=0&&idx<revenueData.length){
+      tip.style.display='block';
+      tip.style.left=(e.clientX+12)+'px';
+      tip.style.top=(e.clientY-8)+'px';
+      tip.textContent=MONTHS[idx]+': $'+(revenueData[idx]/1000).toFixed(0)+'K';
+    }
+  });
+  cv.addEventListener('mouseleave',()=>tip.style.display='none');
+})();
+
+// ── DONUT CHART  (180×180) ───────────────────────────────────────
+(()=>{
+  const cv=document.getElementById('donutChart');
+  const ctx=cv.getContext('2d');
+  const cx=90,cy=90,outerR=78,innerR=50;
+  let ang=-Math.PI/2;
+  const leg=document.getElementById('donutLegend');
+
+  catData.forEach((cat,i)=>{
+    const slice=(cat.value/catTotal)*2*Math.PI,color=COLORS[i];
+    ctx.beginPath();
+    ctx.arc(cx,cy,outerR,ang,ang+slice);
+    ctx.arc(cx,cy,innerR,ang+slice,ang,true);
+    ctx.closePath();ctx.fillStyle=color;ctx.fill();
+    ang+=slice+0.022;
+    const pct=((cat.value/catTotal)*100).toFixed(1);
+    leg.innerHTML+=`<div class="legend-item">
+      <div class="legend-label"><div class="legend-dot" style="background:${color}"></div>${cat.name}</div>
+      <div class="legend-val" style="color:${color}">${pct}%</div>
+    </div>`;
+  });
+  ctx.fillStyle='#e8f4f8';
+  ctx.font='bold 15px Syne,sans-serif';ctx.textAlign='center';
+  ctx.fillText('$'+(catTotal/1000).toFixed(0)+'K',cx,cy+5);
+  ctx.fillStyle='#4a6878';
+  ctx.font='9px Space Mono,monospace';
+  ctx.fillText('TOTAL',cx,cy+18);
+})();
+
+// ── BAR CHART  (h=130 per user override) ────────────────────────
+(()=>{
+  const cv=document.getElementById('barChart');
+  sizeCanvas(cv);
+  const ctx=cv.getContext('2d');
+  const W=cv.width,H=cv.height;
+  const pad={top:7,right:7,bottom:22,left:32};
+  const cW=W-pad.left-pad.right,cH=H-pad.top-pad.bottom;
+  const maxV=Math.max(...weekData,...weekTarget)*1.12;
+  const gW=cW/WEEKDAYS.length,bW=gW*0.28;
+
+  for(let g=0;g<=3;g++){
+    const y=pad.top+(cH/3)*g;
+    ctx.strokeStyle='rgba(26,42,58,0.7)';ctx.lineWidth=0.5;
+    ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(pad.left+cW,y);ctx.stroke();
+    ctx.fillStyle='#4a6878';ctx.font='8px Space Mono,monospace';ctx.textAlign='right';
+    ctx.fillText(Math.floor(maxV*(1-g/3)),pad.left-3,y+3);
+  }
+
+  WEEKDAYS.forEach((day,i)=>{
+    const cx2=pad.left+i*gW+gW/2;
+    const th=(weekTarget[i]/maxV)*cH;
+    ctx.fillStyle='rgba(0,245,196,0.11)';
+    ctx.fillRect(cx2-bW-1,pad.top+cH-th,bW,th);
+    const bh=(weekData[i]/maxV)*cH;
+    const g2=ctx.createLinearGradient(0,pad.top+cH-bh,0,pad.top+cH);
+    g2.addColorStop(0,'#00f5c4');
+    g2.addColorStop(1,'rgba(0,245,196,0.22)');
+    ctx.fillStyle=g2;
+    ctx.fillRect(cx2+1,pad.top+cH-bh,bW,bh);
+    ctx.fillStyle='#4a6878';ctx.font='8px Space Mono,monospace';ctx.textAlign='center';
+    ctx.fillText(day,cx2,H-4);
+  });
+})();
+
+// ── REGION CHART  (h=130 per user override) ─────────────────────
+(()=>{
+  const cv=document.getElementById('regionChart');
+  sizeCanvas(cv);
+  const ctx=cv.getContext('2d');
+  const W=cv.width,H=cv.height;
+  const pad={top:5,right:26,bottom:5,left:108};
+  const cW=W-pad.left-pad.right;
+  const rowH=(H-pad.top-pad.bottom)/REGIONS.length;
+  const maxV=Math.max(...regionData.map(d=>d.value));
+
+  regionData.forEach((r,i)=>{
+    const y=pad.top+i*rowH,bH=rowH*0.38,bY=y+(rowH-bH)/2;
+    const barLen=(r.value/maxV)*cW;
+    const col=`hsl(${160+i*22},85%,60%)`;
+    ctx.fillStyle='rgba(26,42,58,0.5)';
+    ctx.fillRect(pad.left,bY,cW,bH);
+    const gr=ctx.createLinearGradient(pad.left,0,pad.left+barLen,0);
+    gr.addColorStop(0,col);
+    gr.addColorStop(1,col.replace('hsl','hsla').replace(')',',0.35)'));
+    ctx.fillStyle=gr;
+    ctx.fillRect(pad.left,bY,barLen,bH);
+    ctx.fillStyle='#4a6878';ctx.font='8px Space Mono,monospace';ctx.textAlign='right';
+    ctx.fillText(r.name,pad.left-5,bY+bH/2+3);
+    const pct=Math.round((r.value/regionTotal)*100);
+    ctx.fillStyle=col;ctx.textAlign='left';ctx.font='8px Space Mono,monospace';
+    ctx.fillText(pct+'%',pad.left+barLen+3,bY+bH/2+3);
+  });
+})();
+
+// ── PRODUCT TABLE ────────────────────────────────────────────────
+(()=>{
+  const tb=document.getElementById('productTable');
+  productData.forEach((p,i)=>{
+    const pct=Math.round((p.revenue/maxPRev)*100);
+    tb.innerHTML+=`<tr>
+      <td class="rank">${String(i+1).padStart(2,'0')}</td>
+      <td><span class="product-dot" style="background:${p.color}"></span>${p.name}</td>
+      <td style="font-family:'Space Mono',monospace;font-size:11px;color:${p.color}">$${(p.revenue/1000).toFixed(0)}k</td>
+      <td><div class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${p.color}"></div></div></div></td>
+    </tr>`;
+  });
+})();
+
+// ── LIVE UPDATES (every 4s) ──────────────────────────────────────
+setInterval(()=>{
+  const nR=kpi.revenue+ri(-7000,10000);
+  animNum(document.getElementById('kpi-revenue'),kpi.revenue,nR,700,v=>'$'+v.toLocaleString());
+  kpi.revenue=nR;
+
+  const nO=kpi.orders+ri(-5,9);
+  animNum(document.getElementById('kpi-orders'),kpi.orders,nO,600,v=>v.toLocaleString());
+  kpi.orders=nO;
+
+  const nA=kpi.aov+ri(-4,6);
+  animNum(document.getElementById('kpi-aov'),kpi.aov,nA,700,v=>'$'+v);
+  kpi.aov=nA;
+},4000);
+</script>
+</body>
+</html>
